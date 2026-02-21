@@ -29,3 +29,38 @@ A production-grade, highly-available container orchestration platform built with
 - **Scalability:** Designed the network across multiple Availability Zones (Multi-AZ) to ensure high availability.
 - **Observability:** Configured the `awslogs` driver to ensure application health can be monitored without SSH access.
 
+
+# 🚀 UltraStack: Enterprise-Grade AWS ECS Platform
+
+A fully automated, GitOps-driven infrastructure platform built with **Terraform**, **AWS**, and **GitHub Actions**.
+
+## 🏗️ Architecture Overview
+This project deploys a high-availability container environment in the `eu-west-2` (London) region.
+
+* **Networking:** Custom VPC (`10.0.0.0/16`) with Public and Private subnets across two Availability Zones.
+* **Compute:** AWS ECS Fargate (Serverless) running containerized Nginx.
+* **Load Balancing:** Application Load Balancer (ALB) acting as the entry point.
+* **Security:** Security Group nesting (ALB -> ECS) and keyless OIDC authentication for CI/CD.
+* **Observability:** Centralized logging via Amazon CloudWatch.
+
+## 🛠 Tech Stack
+- **IaC:** Terraform v1.10+
+- **CI/CD:** GitHub Actions (OIDC)
+- **Cloud:** AWS (VPC, ECS, ALB, IAM, S3, DynamoDB)
+- **Monitoring:** CloudWatch Logs
+
+## 🚀 Deployment Pipeline
+Every push to the `main` branch triggers a GitHub Action that:
+1.  Authenticates to AWS via OIDC (No secret keys stored!).
+2.  Initializes Terraform with an S3 remote backend.
+3.  Plans and applies the infrastructure changes automatically.
+
+## 📈 Observability
+Application logs are streamed directly to CloudWatch, allowing for real-time monitoring of:
+- Load Balancer Health Checks.
+- HTTP Request/Response codes.
+- Container system output.
+
+---
+*Created as part of a Cloud Engineering immersion project.*
+
