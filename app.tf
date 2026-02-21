@@ -57,3 +57,35 @@ resource "aws_ecs_service" "main" {
   }
 }
 
+
+# 1. Create the Log Group
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name              = "/ecs/ultrastack-app"
+  retention_in_days = 7
+}
+
+# 2. Update the Task Definition (Add the logConfiguration block)
+# Inside your aws_ecs_task_definition "app", update the container_definitions:
+  container_definitions = jsonencode([{
+    name  = "web-app"
+    image = "nginx:latest"
+    portMappings = [{
+      containerPort = 80
+      hostPort      = 80
+    }]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.ecs_logs.name
+        "awslogs-region"        = "eu-west-2"
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
+  }])
+
+resource "aws_ecs_service" "main" {
+  # ... (keep your other settings)
+  force_new_deployment = true # <--- ADD THIS LINE
+}
+
+
