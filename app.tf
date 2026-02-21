@@ -1,4 +1,4 @@
-# 1. IAM Role for ECS Tasks (The 'Identity' of the container)
+# 1. IAM Role for ECS Execution (Allows ECS to pull images and send logs)
 resource "aws_iam_role" "ecs_task_execution_role" {
   name = "ultrastack-execution-role"
 
@@ -17,7 +17,13 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# 2. The Task Definition (The Blueprint)
+# 2. CloudWatch Log Group
+resource "aws_cloudwatch_log_group" "ecs_logs" {
+  name              = "/ecs/ultrastack-app"
+  retention_in_days = 7
+}
+
+# 3. The Task Definition (Merged with Log Config)
 resource "aws_ecs_task_definition" "app" {
   family                   = "ultrastack-app"
   network_mode             = "awsvpc"
@@ -28,25 +34,34 @@ resource "aws_ecs_task_definition" "app" {
 
   container_definitions = jsonencode([{
     name  = "web-app"
-    image = "nginx:latest" # Using a standard web server for testing
+    image = "nginx:latest"
     portMappings = [{
       containerPort = 80
       hostPort      = 80
     }]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = "/ecs/ultrastack-app"
+        "awslogs-region"        = "eu-west-2"
+        "awslogs-stream-prefix" = "ecs"
+      }
+    }
   }])
 }
 
-# 3. The ECS Service (The Manager)
+# 4. The ECS Service (Merged with Force Deployment)
 resource "aws_ecs_service" "main" {
   name            = "ultrastack-service"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
   launch_type     = "FARGATE"
+  force_new_deployment = true
 
   network_configuration {
     security_groups  = [aws_security_group.ecs_sg.id]
-    subnets          = aws_subnet.public[*].id # We use public for now to avoid NAT costs
+    subnets          = aws_subnet.public[*].id
     assign_public_ip = true
   }
 
@@ -56,36 +71,4 @@ resource "aws_ecs_service" "main" {
     container_port   = 80
   }
 }
-
-
-# 1. Create the Log Group
-resource "aws_cloudwatch_log_group" "ecs_logs" {
-  name              = "/ecs/ultrastack-app"
-  retention_in_days = 7
-}
-
-# 2. Update the Task Definition (Add the logConfiguration block)
-# Inside your aws_ecs_task_definition "app", update the container_definitions:
-  container_definitions = jsonencode([{
-    name  = "web-app"
-    image = "nginx:latest"
-    portMappings = [{
-      containerPort = 80
-      hostPort      = 80
-    }]
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.ecs_logs.name
-        "awslogs-region"        = "eu-west-2"
-        "awslogs-stream-prefix" = "ecs"
-      }
-    }
-  }])
-
-resource "aws_ecs_service" "main" {
-  # ... (keep your other settings)
-  force_new_deployment = true # <--- ADD THIS LINE
-}
-
 
