@@ -1,0 +1,27 @@
+# 1. Local terraform directories (huge binaries)
+**/.terraform/*
+
+# 2. Local state files (we use S3 now, so these shouldn't exist, but stay safe)
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+
+# 3. Crash log files
+crash.log
+
+# 4. Variables and secrets
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# 5. CLI configuration files
+.terraformrc
+terraform.rc
+
+# 6. Sensitive local files
+.env
+.aws/
+
